@@ -34,7 +34,7 @@ def _int(table: Mapping[str, Any], name: str, default: int, minimum: int) -> int
     value = table.get(name, default)
     if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
         raise ConfigError(f"{name} must be an integer >= {minimum}")
-    return value
+    return int(value)
 
 
 def _number(table: Mapping[str, Any], name: str, default: float, minimum: float) -> float:
