@@ -32,3 +32,26 @@ class AppConfig:
     searches: tuple[SearchConfig, ...]
     filters: FilterConfig = FilterConfig()
     run: RunConfig = RunConfig()
+
+
+@dataclass(frozen=True, slots=True)
+class JobSummary:
+    job_id: str
+    url: str
+    title: str
+    company: str
+    location: str
+    posted_text: str
+    posted_date: str
+
+
+@dataclass(frozen=True, slots=True)
+class Job:
+    job_id: str
+    url: str
+    title: str
+    company: str
+    location: str
+    posted_text: str
+    posted_date: str
+    description: str

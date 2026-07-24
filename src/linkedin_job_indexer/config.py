@@ -3,11 +3,8 @@ from pathlib import Path
 from typing import Any
 import tomllib
 
+from linkedin_job_indexer.errors import ConfigError
 from linkedin_job_indexer.models import AppConfig, FilterConfig, RunConfig, SearchConfig
-
-
-class ConfigError(ValueError):
-    """Raised when the TOML configuration is invalid."""
 
 
 def _table(value: object, name: str) -> Mapping[str, Any]:
