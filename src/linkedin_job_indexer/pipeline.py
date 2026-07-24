@@ -1,8 +1,8 @@
-from collections.abc import Sequence
 import csv
+import json
+from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 from typing import Protocol
 
@@ -10,6 +10,7 @@ from linkedin_job_indexer.errors import ExtractionBlockedError, ExtractionError,
 from linkedin_job_indexer.filters import evaluate
 from linkedin_job_indexer.models import (
     AppConfig,
+    Decision,
     Job,
     JobSummary,
     RunItem,
@@ -72,24 +73,15 @@ def _write_csv(path: Path, jobs: Sequence[tuple[Job, int, tuple[str, ...]]]) -> 
 def _discover(config: AppConfig, client: JobClient) -> list[JobSummary]:
     jobs: dict[str, JobSummary] = {}
     for search in config.searches:
-        stale_pages = 0
         for page in range(config.run.max_pages):
             summaries = parse_search(client.search(search, start=page * 25))
             if not summaries:
                 break
 
-            before = len(jobs)
             for summary in summaries:
                 jobs.setdefault(summary.job_id, summary)
                 if config.run.max_jobs and len(jobs) >= config.run.max_jobs:
                     return list(jobs.values())
-
-            if len(jobs) == before:
-                stale_pages += 1
-                if stale_pages >= 2:
-                    break
-            else:
-                stale_pages = 0
 
     return list(jobs.values())
 
@@ -106,6 +98,7 @@ def run_pipeline(
     seen_at = now or datetime.now(UTC)
     items: list[RunItem] = []
     accepted_jobs: list[tuple[Job, int, tuple[str, ...]]] = []
+    processed: list[tuple[Job, Decision]] = []
     unseen = 0
     accepted = 0
     rejected = 0
@@ -138,7 +131,7 @@ def run_pipeline(
             continue
 
         decision = evaluate(job, config.filters)
-        store.save(job, decision, seen_at)
+        processed.append((job, decision))
         matched = (*decision.matched_required, *decision.matched_boost)
         status = "accepted" if decision.accepted else "rejected"
         items.append(
@@ -177,4 +170,5 @@ def run_pipeline(
         out_dir / "report.json",
         json.dumps(asdict(report), ensure_ascii=False, indent=2) + "\n",
     )
+    store.save_many(processed, seen_at)
     return report

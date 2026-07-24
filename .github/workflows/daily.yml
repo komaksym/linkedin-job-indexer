@@ -1,0 +1,40 @@
+name: Daily index
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - uses: actions/cache@v4
+        with:
+          path: .data/jobs.sqlite3
+          key: linkedin-jobs-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            linkedin-jobs-${{ runner.os }}-
+      - run: uv sync
+      - name: Index recent jobs
+        run: >-
+          uv run linkedin-jobs run
+          --config config.example.toml
+          --db .data/jobs.sqlite3
+          --out-dir out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linkedin-jobs-${{ github.run_number }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14

@@ -6,8 +6,8 @@ Deliver a CLI-first daily LinkedIn job indexer using public guest HTML endpoints
 
 ## Milestones
 
-1. Establish package, configuration, and domain interfaces.
-2. Implement and test LinkedIn HTML parsing and HTTP failure detection.
-3. Implement and test filtering, persistence, and end-to-end orchestration.
-4. Add CLI, documentation, CI, daily workflow, and live smoke validation.
-5. Push the feature branch and open a PR with the system DAG.
+- [x] Establish package, configuration, and domain interfaces.
+- [x] Implement and test LinkedIn HTML parsing and HTTP failure detection.
+- [x] Implement and test filtering, persistence, and end-to-end orchestration.
+- [x] Add CLI, documentation, CI, daily workflow, and package validation.
+- [ ] Push the feature branch and open a PR with the system DAG. Blocked locally because no GitHub authentication is available in this environment.

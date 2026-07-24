@@ -16,7 +16,10 @@ def make_job(*, title: str = "ML Engineer", description: str = "Python and PyTor
 
 
 def test_evaluate_rejects_title_keyword() -> None:
-    decision = evaluate(make_job(title="Principal ML Engineer"), FilterConfig(reject_title=("principal",)))
+    decision = evaluate(
+        make_job(title="Principal ML Engineer"),
+        FilterConfig(reject_title=("principal",)),
+    )
 
     assert decision.accepted is False
     assert decision.score == 0

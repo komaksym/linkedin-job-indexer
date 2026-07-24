@@ -118,3 +118,54 @@ def test_pipeline_propagates_global_block(tmp_path: Path) -> None:
     with JobStore(tmp_path / "jobs.sqlite3") as store:
         with pytest.raises(ExtractionBlockedError):
             run_pipeline(config, store, tmp_path / "out", BlockedClient())
+
+
+def test_pipeline_does_not_stop_on_repeated_nonempty_pages(tmp_path: Path) -> None:
+    class RepeatingClient:
+        def search(self, _: SearchConfig, start: int) -> str:
+            pages = {
+                0: card("1000000001", "ML Engineer"),
+                25: card("1000000001", "ML Engineer"),
+                50: card("1000000001", "ML Engineer"),
+                75: card("1000000004", "Applied ML Engineer"),
+            }
+            return pages.get(start, "")
+
+        def job(self, job_id: str) -> str:
+            return detail(f"Build machine learning systems with Python for job {job_id}.")
+
+    config = AppConfig(
+        searches=(SearchConfig("machine learning", "Poland"),),
+        filters=FilterConfig(required_any=("machine learning",)),
+        run=RunConfig(max_pages=4, request_delay_seconds=0),
+    )
+
+    with JobStore(tmp_path / "jobs.sqlite3") as store:
+        report = run_pipeline(config, store, tmp_path / "out", RepeatingClient())
+
+    assert report.discovered == 2
+    assert report.accepted == 2
+
+
+def test_pipeline_does_not_persist_partial_run_when_globally_blocked(tmp_path: Path) -> None:
+    class PartiallyBlockedClient:
+        def search(self, _: SearchConfig, start: int) -> str:
+            if start:
+                return ""
+            return card("1000000001", "ML Engineer") + card("1000000002", "AI Engineer")
+
+        def job(self, job_id: str) -> str:
+            if job_id == "1000000002":
+                raise ExtractionBlockedError("blocked")
+            return detail("Build machine learning products with Python.")
+
+    config = AppConfig(
+        searches=(SearchConfig("machine learning", "Poland"),),
+        filters=FilterConfig(required_any=("machine learning",)),
+        run=RunConfig(max_pages=1, request_delay_seconds=0),
+    )
+
+    with JobStore(tmp_path / "jobs.sqlite3") as store:
+        with pytest.raises(ExtractionBlockedError):
+            run_pipeline(config, store, tmp_path / "out", PartiallyBlockedClient())
+        assert store.count() == 0

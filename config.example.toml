@@ -1,0 +1,67 @@
+[run]
+# Use a 30-hour retrieval window so a delayed daily scheduler does not create gaps.
+window_hours = 30
+# LinkedIn's guest endpoint currently advances in batches using start=0,25,50,...
+max_pages = 6
+request_delay_seconds = 0.75
+timeout_seconds = 30
+retries = 2
+# Set to a small positive number for a cheap smoke test; 0 means unlimited.
+max_jobs = 0
+
+[filters]
+# At least one phrase must appear in the title or full description.
+required_any = [
+  "machine learning",
+  "ml",
+  "artificial intelligence",
+  "ai",
+  "deep learning",
+  "llm",
+  "nlp",
+  "data scientist",
+]
+
+# "Senior" is deliberately not rejected: many senior-labelled jobs have realistic requirements.
+reject_title = [
+  "principal",
+  "staff",
+  "director",
+  "head of",
+  "vice president",
+]
+
+reject_description = [
+  "active security clearance",
+  "must be authorized to work in the united states",
+]
+
+# Each unique match adds one point. Accepted jobs are sorted by this score.
+boost = [
+  "python",
+  "pytorch",
+  "transformers",
+  "llm",
+  "nlp",
+  "evaluation",
+  "agents",
+  "mlflow",
+  "fastapi",
+  "docker",
+]
+min_score = 1
+
+[[searches]]
+keywords = "machine learning engineer"
+location = "Poland"
+remote_only = false
+
+[[searches]]
+keywords = "AI engineer"
+location = "Poland"
+remote_only = false
+
+[[searches]]
+keywords = "LLM engineer"
+location = "European Union"
+remote_only = true

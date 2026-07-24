@@ -1,7 +1,8 @@
-from datetime import datetime
 import json
-from pathlib import Path
 import sqlite3
+from collections.abc import Sequence
+from datetime import datetime
+from pathlib import Path
 
 from linkedin_job_indexer.models import Decision, Job
 
@@ -47,33 +48,40 @@ class JobStore:
         return row is not None
 
     def save(self, job: Job, decision: Decision, seen_at: datetime) -> bool:
-        matched = (*decision.matched_required, *decision.matched_boost)
-        cursor = self._connection.execute(
-            """
-            INSERT OR IGNORE INTO jobs (
-                job_id, url, title, company, location, posted_text, posted_date,
-                description, accepted, score, matched_keywords_json, reasons_json,
-                first_seen_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                job.job_id,
-                job.url,
-                job.title,
-                job.company,
-                job.location,
-                job.posted_text,
-                job.posted_date,
-                job.description,
-                int(decision.accepted),
-                decision.score,
-                json.dumps(matched, ensure_ascii=False),
-                json.dumps(decision.reasons, ensure_ascii=False),
-                seen_at.isoformat(),
-            ),
-        )
-        self._connection.commit()
-        return cursor.rowcount == 1
+        return self.save_many(((job, decision),), seen_at) == 1
+
+    def save_many(
+        self, entries: Sequence[tuple[Job, Decision]], seen_at: datetime
+    ) -> int:
+        before = self._connection.total_changes
+        with self._connection:
+            for job, decision in entries:
+                matched = (*decision.matched_required, *decision.matched_boost)
+                self._connection.execute(
+                    """
+                    INSERT OR IGNORE INTO jobs (
+                        job_id, url, title, company, location, posted_text, posted_date,
+                        description, accepted, score, matched_keywords_json, reasons_json,
+                        first_seen_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        job.job_id,
+                        job.url,
+                        job.title,
+                        job.company,
+                        job.location,
+                        job.posted_text,
+                        job.posted_date,
+                        job.description,
+                        int(decision.accepted),
+                        decision.score,
+                        json.dumps(matched, ensure_ascii=False),
+                        json.dumps(decision.reasons, ensure_ascii=False),
+                        seen_at.isoformat(),
+                    ),
+                )
+        return self._connection.total_changes - before
 
     def count(self) -> int:
         row = self._connection.execute("SELECT COUNT(*) FROM jobs").fetchone()

@@ -82,3 +82,17 @@ def test_client_raises_after_retries_are_exhausted() -> None:
     with make_client(httpx.MockTransport(handle)) as client:
         with pytest.raises(ExtractionError, match="503"):
             client.job("123")
+
+
+def test_client_does_not_treat_job_text_about_captcha_as_a_block() -> None:
+    body = """
+    <div class='show-more-less-html__markup'>
+      Build CAPTCHA detection and abuse-prevention systems.
+    </div>
+    """
+
+    def handle(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=body)
+
+    with make_client(httpx.MockTransport(handle)) as client:
+        assert client.job("123") == body

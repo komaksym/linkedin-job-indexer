@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import time
+from collections.abc import Callable
 
 import httpx
 
@@ -14,7 +14,9 @@ _BLOCK_MARKERS = (
     "authwall",
     "checkpoint/challenge",
     "security verification",
-    "captcha",
+    "g-recaptcha",
+    "id=\"captcha\"",
+    "class=\"captcha\"",
 )
 
 
@@ -74,7 +76,9 @@ class LinkedInClient:
                 last_error = exc
                 if attempt < self._config.retries:
                     continue
-                raise ExtractionError(f"request failed after {attempt + 1} attempts: {exc}") from exc
+                raise ExtractionError(
+                    f"request failed after {attempt + 1} attempts: {exc}"
+                ) from exc
 
             if response.status_code in _BLOCKED:
                 raise ExtractionBlockedError(

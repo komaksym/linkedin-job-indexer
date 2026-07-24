@@ -1,7 +1,7 @@
+import tomllib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
-import tomllib
 
 from linkedin_job_indexer.errors import ConfigError
 from linkedin_job_indexer.models import AppConfig, FilterConfig, RunConfig, SearchConfig
