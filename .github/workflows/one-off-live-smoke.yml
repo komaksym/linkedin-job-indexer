@@ -2,7 +2,7 @@ name: One-off live smoke
 
 on:
   schedule:
-    - cron: "50 13 24 7 *"
+    - cron: "*/5 * * * *"
   issue_comment:
     types: [created]
 
