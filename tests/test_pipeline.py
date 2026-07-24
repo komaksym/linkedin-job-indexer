@@ -115,9 +115,8 @@ def test_pipeline_propagates_global_block(tmp_path: Path) -> None:
 
     config = AppConfig(searches=(SearchConfig("AI", "Poland"),))
 
-    with JobStore(tmp_path / "jobs.sqlite3") as store:
-        with pytest.raises(ExtractionBlockedError):
-            run_pipeline(config, store, tmp_path / "out", BlockedClient())
+    with JobStore(tmp_path / "jobs.sqlite3") as store, pytest.raises(ExtractionBlockedError):
+        run_pipeline(config, store, tmp_path / "out", BlockedClient())
 
 
 def test_pipeline_does_not_stop_on_repeated_nonempty_pages(tmp_path: Path) -> None:

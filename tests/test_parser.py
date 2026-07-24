@@ -6,7 +6,6 @@ from linkedin_job_indexer.errors import ParsingError
 from linkedin_job_indexer.models import JobSummary
 from linkedin_job_indexer.parser import parse_job, parse_search
 
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 

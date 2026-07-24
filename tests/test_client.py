@@ -70,18 +70,22 @@ def test_client_raises_clear_error_for_authwall() -> None:
     def handle(_: httpx.Request) -> httpx.Response:
         return httpx.Response(200, text="<main class='authwall'>Sign in</main>")
 
-    with make_client(httpx.MockTransport(handle)) as client:
-        with pytest.raises(ExtractionBlockedError, match="blocked"):
-            client.job("123")
+    with (
+        make_client(httpx.MockTransport(handle)) as client,
+        pytest.raises(ExtractionBlockedError, match="blocked"),
+    ):
+        client.job("123")
 
 
 def test_client_raises_after_retries_are_exhausted() -> None:
     def handle(_: httpx.Request) -> httpx.Response:
         return httpx.Response(503, text="unavailable")
 
-    with make_client(httpx.MockTransport(handle)) as client:
-        with pytest.raises(ExtractionError, match="503"):
-            client.job("123")
+    with (
+        make_client(httpx.MockTransport(handle)) as client,
+        pytest.raises(ExtractionError, match="503"),
+    ):
+        client.job("123")
 
 
 def test_client_does_not_treat_job_text_about_captcha_as_a_block() -> None:
