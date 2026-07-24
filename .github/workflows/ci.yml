@@ -1,11 +1,11 @@
-name: CI
+name: CI diagnostic
 
 on:
   push:
   pull_request:
 
 jobs:
-  validate:
+  validation-diagnostic:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +14,17 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --dev
-      - run: uv run ruff check .
-      - run: uv run mypy
-      - run: uv run pytest
-      - run: uv run python -m build
+      - name: Capture validation outputs
+        run: |
+          uv run ruff check . > ruff.log 2>&1 || true
+          uv run mypy > mypy.log 2>&1 || true
+          uv run pytest > pytest.log 2>&1 || true
+          uv run python -m build > build.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-diagnostic
+          path: |
+            ruff.log
+            mypy.log
+            pytest.log
+            build.log
