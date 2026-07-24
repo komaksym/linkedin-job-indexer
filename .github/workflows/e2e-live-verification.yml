@@ -1,0 +1,56 @@
+name: E2E live verification
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.event.head_commit.message != 'chore: capture LinkedIn E2E result'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --dev
+      - name: Prepare bounded config
+        run: |
+          cp config.example.toml e2e.toml
+          sed -i 's/max_pages = 6/max_pages = 1/' e2e.toml
+          sed -i 's/max_jobs = 0/max_jobs = 3/' e2e.toml
+          sed -i 's/request_delay_seconds = 0.75/request_delay_seconds = 0.25/' e2e.toml
+      - name: Run first live index
+        run: |
+          mkdir -p e2e-results/run-1
+          set +e
+          uv run linkedin-jobs run \
+            --config e2e.toml \
+            --db .data/e2e.sqlite3 \
+            --out-dir e2e-results/run-1 >e2e-results/run-1/console.txt 2>&1
+          echo "$?" > e2e-results/run-1/exit-code.txt
+          set -e
+      - name: Run second pass for deduplication
+        run: |
+          mkdir -p e2e-results/run-2
+          set +e
+          uv run linkedin-jobs run \
+            --config e2e.toml \
+            --db .data/e2e.sqlite3 \
+            --out-dir e2e-results/run-2 >e2e-results/run-2/console.txt 2>&1
+          echo "$?" > e2e-results/run-2/exit-code.txt
+          set -e
+      - name: Capture environment and publish evidence
+        run: |
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > e2e-results/ran-at.txt
+          python --version > e2e-results/python-version.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f e2e-results
+          git commit -m 'chore: capture LinkedIn E2E result'
+          git push
