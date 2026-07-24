@@ -55,3 +55,37 @@ class Job:
     posted_text: str
     posted_date: str
     description: str
+
+
+@dataclass(frozen=True, slots=True)
+class Decision:
+    accepted: bool
+    score: int
+    matched_required: tuple[str, ...]
+    matched_boost: tuple[str, ...]
+    reasons: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RunItem:
+    job_id: str
+    title: str
+    company: str
+    location: str
+    url: str
+    status: str
+    score: int = 0
+    matched_keywords: tuple[str, ...] = ()
+    reasons: tuple[str, ...] = ()
+    error: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class RunReport:
+    discovered: int
+    unseen: int
+    accepted: int
+    rejected: int
+    skipped_seen: int
+    failed: int
+    items: tuple[RunItem, ...]
