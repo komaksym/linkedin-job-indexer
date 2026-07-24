@@ -1,6 +1,8 @@
 name: One-off live smoke
 
 on:
+  schedule:
+    - cron: "50 13 24 7 *"
   issue_comment:
     types: [created]
 
@@ -10,7 +12,7 @@ permissions:
 
 jobs:
   smoke:
-    if: github.event.issue.number == 1 && github.event.comment.body == '/live-smoke-20260724'
+    if: github.event_name == 'schedule' || (github.event.issue.number == 1 && github.event.comment.body == '/live-smoke-20260724')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -41,6 +43,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
+          from datetime import datetime, timezone
           from pathlib import Path
 
           def read(path: str, limit: int = 12000) -> str:
@@ -54,9 +57,10 @@ jobs:
           console = read("out/console.txt")
           jobs = read("out/jobs.csv")
           report = read("out/report.json")
+          now = datetime.now(timezone.utc).isoformat()
           body = f"""## One-off live smoke result
 
-          Bounded to **1 search page** and **3 job descriptions**.
+          Ran at `{now}`. Bounded to **1 search page** and **3 job descriptions**.
 
           **CLI exit code:** `{exit_code}`
 
